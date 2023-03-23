@@ -1,0 +1,22 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredIdentifiers">
+        <list>
+          <option value="palmbax_media.about.models.wagtail" />
+          <option value="palmbax_media.about.models.modelcluster" />
+          <option value="palmbax_media.contact.models.about" />
+          <option value="palmbax_media.contact.models.AboutPage" />
+          <option value="palmbax_media.home.admin.*" />
+          <option value="palmbax_media.home.models.*" />
+          <option value="palmbax_media.services.models.*" />
+          <option value="palmbax_media.contact.models.menu" />
+          <option value="palmbax_media.contact.models.Menu" />
+          <option value="palmbax_media.palmbax_media.settings.base.*" />
+          <option value="geopy" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
