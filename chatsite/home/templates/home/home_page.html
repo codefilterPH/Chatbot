@@ -1,6 +1,5 @@
 {% extends "base.html" %}
 {% load wagtailcore_tags %}
-{% load static %}
 
 {% block body_class %}template-homepage{% endblock %}
 {% block extra_css %}
@@ -10,8 +9,8 @@
   flex-direction: column;
   align-items: flex-start;
   justify-content: flex-start;
-  height: 100%;
-  overflow-y: scroll;
+  height: 300px; /* set the height of the message container */
+  overflow-y: scroll; /* add a vertical scrollbar to the message container */
   padding: 20px;
 }
 
@@ -57,36 +56,55 @@
   cursor: pointer;
 }
 
+#chat-form input, #chat-form button {
+  display: inline-block;
+  vertical-align: middle;
+}
 
+input {
+  word-wrap: break-word;
+  height: 100px; /* set the height of the input field */
+  overflow-y: scroll; /* add a vertical scrollbar to the input field */
+}
 </style>
 {% endblock extra_css %}
 {% block content %}
+
 <div class="container-fluid">
-  <h1 class="text-center mt-5">My Chiroprators Chatbot</h1><hr>
-  <div class="message-container mb-5 mt-5 bg-light" id="message-container">
-    <!--user type response -->
-    {% for message in messages %}
+  <div class="card-body">
+    <h1 class="text-center mt-5">Chiroprators AI Support</h1><hr>
+      <div class="message-container mb-5 mt-5 bg-light" id="message-container">
+      <!--user type responses -->
+      {% for message in messages %}
       <div class="message {{ message.extra_classes }}">
         <p class="message-text">{{ message.text }}</p>
       </div>
-    {% endfor %}
-  </div>
-
-  <form id="chat-form" method="POST" action="{{ self.url }}">
+      {% endfor %}
+    </div>
+    <!-- form where users can type message and submit to open ai -->
+    <form id="chat-form" class="inline-block">
     {% csrf_token %}
-    <input type="text" id="user-message" name="mytext" placeholder="Type your message here...">
-    <button type="submit">Send</button>
-  </form>
+        <input type="hidden" name="Api" value="{{api_key}}">
+        <input type="text" class="form-control inline-block" id="user-message" name="mytext" placeholder="Type your message here...">
+        <button class="inline-block" type="submit">Send</button>
+    </form>
+  </div>
 </div>
 {% endblock content %}
 {% block extra_js %}
 <script>
+var api_key =  document.getElementsByName("Api")[0].value;
+var ai_model = "{{ ai_model }}";
+var max_tokens = {{ max_tokens }};
 let inputField = document.getElementById("user-message");
 let messageContainer = document.getElementById("message-container");
 
 document.getElementById("chat-form").addEventListener("submit", function(e) {
   e.preventDefault();
-  let userMessage = inputField.value;
+  let userMessage = inputField.value.trim();
+  if (userMessage === "") {
+    return; // Do not submit the form if the message input field is empty or only contains whitespace characters
+  }
   inputField.value = "";
 
   // Post the user's message to the message container
@@ -97,32 +115,31 @@ document.getElementById("chat-form").addEventListener("submit", function(e) {
   `;
 
   fetch("https://api.openai.com/v1/completions", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "Authorization": "Bearer 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"
-  },
-  body: JSON.stringify({
-    "model": "text-davinci-003",
-    "prompt": userMessage,
-    "temperature": 0.7,
-    "max_tokens": 50
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${api_key}`
+    },
+    body: JSON.stringify({
+      "model": ai_model,
+      "prompt": userMessage,
+      "temperature": 0.7,
+      "max_tokens": max_tokens
+    })
   })
-})
-.then(response => response.json())
-.then(data => {
-  let botMessage = data.choices[0].text;
-  // Append the bot's message to the chat container
-  messageContainer.innerHTML += `
-    <div class="message bot-message">
-      <p class="message-text">${botMessage}</p>
-    </div>
-  `;
-  // Scroll to the bottom of the chat container
-  messageContainer.scrollTop = messageContainer.scrollHeight;
-})
-.catch(error => console.error(error));
-
+  .then(response => response.json())
+  .then(data => {
+    let botMessage = data.choices[0].text;
+    // Append the bot's message to the chat container
+    messageContainer.innerHTML += `
+      <div class="message bot-message">
+        <p class="message-text">${botMessage}</p>
+      </div>
+    `;
+    // Scroll to the bottom of the chat container
+    messageContainer.scrollTop = messageContainer.scrollHeight;
+  })
+  .catch(error => console.error(error));
 });
 
 </script>

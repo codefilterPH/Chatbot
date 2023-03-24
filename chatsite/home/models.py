@@ -7,9 +7,7 @@ from wagtail.admin.panels import (
 )
 from wagtail.models import Page, Orderable
 from wagtail.fields import RichTextField
-
-import openai
-from chatapp.api_key import api_key
+from chatapp.models import OpenAIKey
 
 
 class HomePage(Page):
@@ -20,15 +18,29 @@ class HomePage(Page):
         FieldPanel('text'),
     ]
 
+    class Meta:
+        verbose_name = "Home"
+
     def get_context(self, request, *args, **kwargs):
         context = super().get_context(request, *args, **kwargs)
-        openai.api_key = api_key
+        try:
+            key = OpenAIKey.objects.get()
+        except OpenAIKey.DoesNotExist:
+            # If no API key exists, create a new one and save it to the database
+            api_key = "Replace me with valid API KEY"
+            ai_model = "text-davinci-003"
+            token = 50
+            key = OpenAIKey.objects.create(
+                name="API KEY",
+                key=api_key,
+                model=ai_model,
+                max_tokens=token
+            )
 
-        user_input = request.POST.get('mytext')
-        if user_input:
-            #prompt = f"You said: {user_input}"
-            #response = openai.Completion.create(engine="text-davinci-002", prompt=prompt, max_tokens=100)
-            #context['response_text'] = response
-            context["response_text"] = user_input
-
-            return context
+        if key.key is not None:
+            context['api_key'] = key.key
+        if key.model is not None:
+            context['ai_model'] = key.model
+        if key.max_tokens is not None:
+            context['max_tokens'] = key.max_tokens
+        return context
