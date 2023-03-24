@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% load wagtailcore_tags %}
+{% load static %}
+
+{% block body_class %}template-homepage{% endblock %}
+{% block extra_css %}
+<style>
+ .message-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  height: 100%;
+  overflow-y: scroll;
+  padding: 20px;
+}
+
+.message {
+  display: inline-block;
+  max-width: 80%;
+  margin-bottom: 10px;
+  border-radius: 20px;
+  padding: 10px 15px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.my-message {
+  background-color: #e5e5ea;
+  align-self: flex-end;
+}
+
+.bot-message {
+  background-color: #4CAF50;
+  color: white;
+}
+
+/* Style the input field */
+#user-message {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+/* Style the button */
+#chat-form button[type="submit"] {
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+
+</style>
+{% endblock extra_css %}
+{% block content %}
+<div class="container-fluid">
+  <h1 class="text-center">My Chiroprators Chatbot</h1><hr>
+  <div class="message-container">
+    <!--user type response -->
+    {% for message in messages %}
+      <div class="message {{ message.extra_classes }}">
+        <p class="message-text">{{ message.text }}</p>
+      </div>
+    {% endfor %}
+    <!--adding a chatbot response -->
+    {% if response_text %}
+    <div class="message bot-message">
+      <p class="message-text"> {{ response_text.choices.0.text }}</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <form class="justify-content-center" id="chat-form" method="POST" action="{{ self.url }}">
+    {% csrf_token %}
+    <input type="text" id="user-message" name="mytext" placeholder="Type your message here...">
+    <button type="submit">Send</button>
+  </form>
+</div>
+{% endblock content %}
+{% block extra_js %}
+<script>
+    const form = document.querySelector('#chat-form');
+    const messageContainer = document.querySelector('.message-container');
+    const userMessage = document.querySelector('#user-message');
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const message = userMessage.value;
+      userMessage.value = '';
+      addMessage('my-message', message);
+
+      fetch('/chatbot/api/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': '{{ csrf_token }}',
+        },
+        body: JSON.stringify({ message: message })
+      })
+        .then(response => response.json())
+        .then(data => {
+          const responseMessage = data.choices[0].text.trim();
+          addMessage('bot-message', responseMessage);
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          addMessage('bot-message', 'Sorry, an error occurred.');
+        });
+    });
+
+    function addMessage(className, text) {
+      const messageDiv = document.createElement('div');
+      messageDiv.classList.add('message', className);
+      const messageText = document.createElement('p');
+      messageText.classList.add('message-text');
+      messageText.textContent = text;
+      messageDiv.appendChild(messageText);
+      messageContainer.appendChild(messageDiv);
+    }
+  </script>
+script>
+{% endblock extra_js %}

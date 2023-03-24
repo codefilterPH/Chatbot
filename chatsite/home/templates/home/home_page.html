@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% load wagtailcore_tags %}
+{% load static %}
+
+{% block body_class %}template-homepage{% endblock %}
+{% block extra_css %}
+<style>
+ .message-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  height: 100%;
+  overflow-y: scroll;
+  padding: 20px;
+}
+
+.message {
+  display: inline-block;
+  max-width: 80%;
+  margin-bottom: 10px;
+  border-radius: 20px;
+  padding: 10px 15px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.my-message {
+  background-color: #36d1dc;
+  align-self: flex-end;
+  color: white;
+}
+
+.bot-message {
+  background-color: #EAEAEA;
+  color: black;
+}
+
+/* Style the input field */
+#user-message {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+/* Style the button */
+#chat-form button[type="submit"] {
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+
+</style>
+{% endblock extra_css %}
+{% block content %}
+<div class="container-fluid">
+  <h1 class="text-center mt-5">My Chiroprators Chatbot</h1><hr>
+  <div class="message-container mb-5 mt-5 bg-light" id="message-container">
+    <!--user type response -->
+    {% for message in messages %}
+      <div class="message {{ message.extra_classes }}">
+        <p class="message-text">{{ message.text }}</p>
+      </div>
+    {% endfor %}
+  </div>
+
+  <form id="chat-form" method="POST" action="{{ self.url }}">
+    {% csrf_token %}
+    <input type="text" id="user-message" name="mytext" placeholder="Type your message here...">
+    <button type="submit">Send</button>
+  </form>
+</div>
+{% endblock content %}
+{% block extra_js %}
+<script>
+let inputField = document.getElementById("user-message");
+let messageContainer = document.getElementById("message-container");
+
+document.getElementById("chat-form").addEventListener("submit", function(e) {
+  e.preventDefault();
+  let userMessage = inputField.value;
+  inputField.value = "";
+
+  // Post the user's message to the message container
+  messageContainer.innerHTML += `
+    <div class="message my-message">
+      <p class="message-text">${userMessage}</p>
+    </div>
+  `;
+
+  fetch("https://api.openai.com/v1/completions", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer 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"
+  },
+  body: JSON.stringify({
+    "model": "text-davinci-003",
+    "prompt": userMessage,
+    "temperature": 0.7,
+    "max_tokens": 50
+  })
+})
+.then(response => response.json())
+.then(data => {
+  let botMessage = data.choices[0].text;
+  // Append the bot's message to the chat container
+  messageContainer.innerHTML += `
+    <div class="message bot-message">
+      <p class="message-text">${botMessage}</p>
+    </div>
+  `;
+  // Scroll to the bottom of the chat container
+  messageContainer.scrollTop = messageContainer.scrollHeight;
+})
+.catch(error => console.error(error));
+
+});
+
+</script>
+{% endblock extra_js %}
