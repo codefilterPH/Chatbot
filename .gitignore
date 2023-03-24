@@ -1,0 +1,4 @@
+#do not include virtual env
+.venv
+/venv/
+/venv
